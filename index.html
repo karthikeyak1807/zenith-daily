@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zenith Daily — Premium Daily Task & Hobby Tracker</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="selection:bg-indigo-500 selection:text-white">
+
+  <!-- Aurora Animated Mesh Background -->
+  <div class="aurora-bg">
+    <div class="aurora-orb aurora-orb-1"></div>
+    <div class="aurora-orb aurora-orb-2"></div>
+    <div class="aurora-orb aurora-orb-3"></div>
+    <div class="aurora-orb aurora-orb-4"></div>
+  </div>
+  <div class="grid-overlay"></div>
+
+  <!-- App Wrapper -->
+  <div class="relative z-10 flex flex-col min-h-screen">
+    
+    <!-- Top Navigation Header -->
+    <header class="border-b border-white/10 backdrop-blur-xl bg-slate-950/40 sticky top-0 z-30 transition-colors">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-3.5 flex items-center justify-between gap-4">
+        
+        <!-- Brand / Logo -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 ring-1 ring-white/20">
+            <i data-lucide="check-check" class="w-5 h-5 text-white"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-heading font-extrabold text-xl tracking-tight gradient-text-aurora">Zenith</span>
+              <span class="text-xs uppercase font-mono tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold">Daily</span>
+            </div>
+            <p class="text-[11px] text-slate-400 hidden sm:block font-medium">Work & Hobby Habit System</p>
+          </div>
+        </div>
+
+        <!-- Clock, Streak & Utilities -->
+        <div class="flex items-center gap-2 sm:gap-4">
+          <!-- Real-Time Clock -->
+          <div class="hidden md:flex flex-col text-right font-mono text-xs">
+            <span id="realTimeClock" class="font-bold text-slate-200 text-sm tracking-wider">--:--:--</span>
+            <span id="currentDateDisplay" class="text-[11px] text-slate-400 font-sans">Loading...</span>
+          </div>
+
+          <!-- Overall Streak Badge -->
+          <div id="streakCountBadge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-pill text-xs font-semibold text-amber-300 shadow-sm border border-amber-500/20">
+            <i data-lucide="flame" class="w-4 h-4 text-amber-400 fill-amber-400/80"></i>
+            <span>0 Day Streak</span>
+          </div>
+
+          <!-- Sound Effects Toggle -->
+          <button id="soundToggleBtn" class="p-2 rounded-xl glass-pill text-slate-300 hover:text-white transition-all hover:scale-105" data-tooltip="Toggle Audio Feedback">
+            <i id="soundIcon" data-lucide="volume-2" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Dark / Light Theme Toggle -->
+          <button id="themeToggleBtn" class="p-2 rounded-xl glass-pill text-slate-300 hover:text-white transition-all hover:scale-105" data-tooltip="Toggle Theme">
+            <i id="themeIcon" data-lucide="moon" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
+      
+      <!-- Hero Overview Banner -->
+      <section class="glass-panel p-6 sm:p-8 relative overflow-hidden">
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          
+          <!-- Motivation & Greeting -->
+          <div class="space-y-3 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              Day 1 Ready
+            </div>
+            <h1 id="heroGreeting" class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-100 font-heading">
+              Good day, Ready to Thrive?
+            </h1>
+            <p id="heroQuote" class="text-sm sm:text-base text-slate-400 italic leading-relaxed">
+              "We are what we repeatedly do. Excellence, then, is not an act, but a habit."
+            </p>
+
+            <!-- Quick Action Trigger -->
+            <div class="pt-2 flex flex-wrap items-center gap-3">
+              <button id="openAddTaskBtn" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Add Daily Task / Hobby</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Circular Progress Gauge & Summary -->
+          <div class="flex items-center gap-6 self-start lg:self-center glass-pill p-4 sm:p-5 rounded-2xl border border-white/10">
+            <!-- SVG Progress Ring -->
+            <div class="relative w-24 h-24 flex items-center justify-center">
+              <svg class="w-24 h-24 transform -rotate-90">
+                <circle cx="48" cy="48" r="42" stroke="currentColor" stroke-width="8" class="text-slate-800/80" fill="transparent"/>
+                <circle id="progressRingCircle" cx="48" cy="48" r="42" stroke="url(#progressGradient)" stroke-width="8" stroke-linecap="round" fill="transparent" stroke-dasharray="263.89" stroke-dashoffset="263.89" class="progress-ring-circle"/>
+                <defs>
+                  <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#6366f1" />
+                    <stop offset="50%" stop-color="#a855f7" />
+                    <stop offset="100%" stop-color="#06b6d4" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="progressPercent" class="font-mono text-xl font-bold text-slate-100">0%</span>
+                <span class="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Done</span>
+              </div>
+            </div>
+
+            <!-- Stats breakdown -->
+            <div class="space-y-1">
+              <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Today's Progress</div>
+              <div id="progressCount" class="text-sm font-semibold text-slate-200">0 finished</div>
+              <div class="text-xs text-indigo-400 flex items-center gap-1 font-medium">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                <span>Every day is a fresh opportunity</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Category Filter Tabs Bar -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <!-- Dynamic Category Tabs -->
+          <div id="categoryTabsContainer" class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none flex-wrap sm:flex-nowrap">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- Status Filter (All / Active / Completed) -->
+          <div class="flex items-center p-1 rounded-xl glass-pill border border-white/10 text-xs">
+            <button class="status-filter-btn px-3 py-1.5 rounded-lg font-medium transition-all text-indigo-400" data-status="all">All</button>
+            <button class="status-filter-btn px-3 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-white" data-status="active">To Do</button>
+            <button class="status-filter-btn px-3 py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-white" data-status="completed">Done</button>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+          <input 
+            type="text" 
+            id="taskSearchInput" 
+            placeholder="Search hobbies, work tasks, or habits..." 
+            class="w-full bg-slate-900/60 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/50 transition-all backdrop-blur-md"
+          >
+        </div>
+      </section>
+
+      <!-- Tasks & Hobbies Grid / List -->
+      <section class="space-y-4">
+        <div id="taskList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Dynamically populated task cards -->
+        </div>
+
+        <!-- Empty State Graphic (Clean Day 1 Canvas) -->
+        <div id="emptyState" class="hidden glass-panel p-8 sm:p-12 text-center space-y-5 max-w-lg mx-auto">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 text-indigo-400 flex items-center justify-center mx-auto border border-indigo-500/30 shadow-lg shadow-indigo-500/10">
+            <i data-lucide="sparkles" class="w-8 h-8"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-100 font-heading">Welcome to Day 1</h3>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1.5 max-w-md mx-auto leading-relaxed">
+              Your canvas is pristine. Start building the habits of the ideal person by adding your daily work objectives and favorite hobbies.
+            </p>
+          </div>
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button id="emptyStateAddBtn" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Create First Habit</span>
+            </button>
+            <button id="emptyStateBlueprintBtn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl glass-pill hover:bg-white/10 text-slate-300 hover:text-white font-medium text-xs flex items-center justify-center gap-2 border border-white/15 transition-all">
+              <i data-lucide="compass" class="w-4 h-4 text-amber-400"></i>
+              <span>Load 5-Pillar Blueprint</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Visual Analytics & Heatmap Section -->
+      <section class="space-y-4 pt-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i data-lucide="bar-chart-2" class="w-5 h-5 text-indigo-400"></i>
+            <h2 class="text-lg font-bold text-slate-100 font-heading">Habit Analytics & Balance</h2>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">Real-time Insights</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          
+          <!-- Category Balance Chart (Works vs Hobbies) -->
+          <div class="glass-panel p-5 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-pink-400"></i>
+                Works vs. Hobbies Split
+              </h3>
+              <span class="text-[11px] text-slate-400">Distribution</span>
+            </div>
+            <div class="relative flex-1 min-h-[220px] flex items-center justify-center">
+              <canvas id="categoryChart"></canvas>
+              <div id="categoryChartEmpty" class="absolute inset-0 flex items-center justify-center text-xs text-slate-500 font-medium hidden">
+                Add tasks to visualize balance
+              </div>
+            </div>
+          </div>
+
+          <!-- Weekly Completion Trend -->
+          <div class="glass-panel p-5 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                <i data-lucide="trending-up" class="w-4 h-4 text-indigo-400"></i>
+                7-Day Consistency Rate
+              </h3>
+              <span class="text-[11px] text-slate-400">% Checked</span>
+            </div>
+            <div class="relative flex-1 min-h-[220px]">
+              <canvas id="weeklyTrendChart"></canvas>
+            </div>
+          </div>
+
+          <!-- GitHub-Style 35-Day Activity Heatmap -->
+          <div class="glass-panel p-5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                  <i data-lucide="calendar" class="w-4 h-4 text-emerald-400"></i>
+                  Consistency Heatmap
+                </h3>
+                <span class="text-[11px] text-slate-400">Past 35 Days</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-4">Hover over cells to view daily completion intensity.</p>
+              
+              <!-- Heatmap Grid -->
+              <div id="activityHeatmapGrid" class="flex flex-wrap gap-1.5 p-3 rounded-xl bg-slate-950/40 border border-white/5">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Heatmap legend -->
+            <div class="flex items-center justify-between pt-4 border-t border-white/5 text-[10px] text-slate-400">
+              <span>Less</span>
+              <div class="flex items-center gap-1">
+                <div class="w-2.5 h-2.5 rounded-sm bg-white/5"></div>
+                <div class="w-2.5 h-2.5 rounded-sm bg-indigo-500/30"></div>
+                <div class="w-2.5 h-2.5 rounded-sm bg-indigo-500/60"></div>
+                <div class="w-2.5 h-2.5 rounded-sm bg-indigo-500/90"></div>
+                <div class="w-2.5 h-2.5 rounded-sm bg-purple-500"></div>
+              </div>
+              <span>More</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Data Management & Backup Controls -->
+      <section class="glass-panel p-5 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+            <i data-lucide="database" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h4 class="text-xs font-semibold text-slate-200">Data Management & Privacy</h4>
+            <p class="text-[11px] text-slate-400">All habits persist locally in your browser. Pure & private.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center flex-wrap gap-2">
+          <!-- Load Blueprint -->
+          <button id="loadBlueprintBtn" class="px-3 py-1.5 rounded-lg glass-pill text-xs font-medium text-slate-300 hover:text-white hover:border-amber-500/40 transition-colors flex items-center gap-1.5" data-tooltip="Load Balanced 5-Pillar Template">
+            <i data-lucide="compass" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>Day 1 Blueprint</span>
+          </button>
+
+          <!-- Reset Today -->
+          <button id="resetTodayBtn" class="px-3 py-1.5 rounded-lg glass-pill text-xs font-medium text-slate-300 hover:text-white hover:border-indigo-500/40 transition-colors flex items-center gap-1.5" data-tooltip="Clear today's checks for a fresh session">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>Reset Today</span>
+          </button>
+
+          <!-- Clear All Data (Clean Slate) -->
+          <button id="clearAllBtn" class="px-3 py-1.5 rounded-lg glass-pill text-xs font-medium text-slate-300 hover:text-white hover:border-rose-500/40 transition-colors flex items-center gap-1.5" data-tooltip="Wipe all tasks to start 100% blank">
+            <i data-lucide="trash" class="w-3.5 h-3.5 text-rose-400"></i>
+            <span>Clean Slate</span>
+          </button>
+
+          <!-- Export JSON -->
+          <button id="exportDataBtn" class="px-3 py-1.5 rounded-lg glass-pill text-xs font-medium text-slate-300 hover:text-white hover:border-emerald-500/40 transition-colors flex items-center gap-1.5" data-tooltip="Download JSON Backup">
+            <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Export</span>
+          </button>
+
+          <!-- Import JSON -->
+          <input type="file" id="importFileInput" accept=".json" class="hidden">
+          <button id="importDataBtn" class="px-3 py-1.5 rounded-lg glass-pill text-xs font-medium text-slate-300 hover:text-white hover:border-cyan-500/40 transition-colors flex items-center gap-1.5" data-tooltip="Restore JSON Backup">
+            <i data-lucide="upload" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>Import</span>
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 py-6 text-center text-xs text-slate-500">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <p>© 2026 Zenith Daily — Designed for high-performance living & creative balance.</p>
+        <div class="flex items-center gap-4 text-[11px]">
+          <span class="flex items-center gap-1 text-slate-400">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> Local & Private
+          </span>
+          <span class="flex items-center gap-1 text-slate-400">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-indigo-400"></i> Instant Response
+          </span>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ==========================================================================
+       Add / Edit Task Modal
+       ========================================================================== -->
+  <div id="taskModal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-content glass-panel w-full max-w-lg bg-slate-900/95 border border-white/10 p-6 rounded-2xl shadow-2xl space-y-5">
+      
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h3 id="taskModalTitle" class="text-lg font-bold text-slate-100 font-heading">Add Daily Habit or Task</h3>
+        <button id="closeTaskModalBtn" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="taskForm" class="space-y-4">
+        <!-- Title -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Title / Habit Name *</label>
+          <input 
+            type="text" 
+            id="taskTitle" 
+            required 
+            placeholder="e.g. Acoustic Guitar Practice or Deep Coding" 
+            class="w-full bg-slate-950/70 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+          >
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Description / Steps (Optional)</label>
+          <textarea 
+            id="taskDescription" 
+            rows="2" 
+            placeholder="Brief goals or instructions for this session..." 
+            class="w-full bg-slate-950/70 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+          ></textarea>
+        </div>
+
+        <!-- Category & Priority -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Category *</label>
+            <select id="taskCategory" class="w-full bg-slate-950/70 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+              <option value="work">💼 Work / Professional</option>
+              <option value="hobby">🎨 Hobby / Creative</option>
+              <option value="health">🏃 Health & Habits</option>
+              <option value="learning">📚 Learning & Reading</option>
+              <option value="custom">✨ Custom Goal</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Priority</label>
+            <select id="taskPriority" class="w-full bg-slate-950/70 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+              <option value="high">🔴 High Priority</option>
+              <option value="medium" selected>🟡 Medium Priority</option>
+              <option value="low">🟢 Low Priority</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Time of Day & Duration -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Time of Day</label>
+            <select id="taskTime" class="w-full bg-slate-950/70 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+              <option value="morning">🌅 Morning</option>
+              <option value="afternoon">☀️ Afternoon</option>
+              <option value="evening">🌙 Evening</option>
+              <option value="anytime">⏰ Anytime</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Target Duration (Minutes)</label>
+            <input 
+              type="number" 
+              id="taskMinutes" 
+              min="5" 
+              max="240" 
+              step="5" 
+              value="30" 
+              class="w-full bg-slate-950/70 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors font-mono"
+            >
+          </div>
+        </div>
+
+        <!-- Submit & Cancel -->
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+          <button type="button" id="cancelTaskModalBtn" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white transition-colors">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium text-xs shadow-lg shadow-indigo-600/30 transition-all">
+            Save Habit
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       Focus / Pomodoro Companion Modal
+       ========================================================================== -->
+  <div id="focusModal" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-content glass-panel w-full max-w-md bg-slate-900/95 border border-white/10 p-6 rounded-2xl shadow-2xl text-center space-y-6">
+      
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div class="flex items-center gap-2 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
+          <i data-lucide="timer" class="w-4 h-4"></i>
+          <span>Zenith Focus Session</span>
+        </div>
+        <button id="closeFocusModalBtn" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Linked Task -->
+      <div>
+        <p class="text-xs text-slate-400 uppercase tracking-widest font-semibold mb-1">Focusing On</p>
+        <h3 id="focusTaskTitle" class="text-lg font-bold text-slate-100 font-heading">Daily Work Session</h3>
+      </div>
+
+      <!-- Large Timer Countdown -->
+      <div class="py-4">
+        <div id="timerDisplay" class="timer-display">25:00</div>
+      </div>
+
+      <!-- Presets -->
+      <div class="flex items-center justify-center gap-2">
+        <button class="timer-mode-btn px-3 py-1.5 rounded-lg text-xs font-mono font-medium glass-pill bg-indigo-600 text-white transition-colors" data-time="25">25m Pomodoro</button>
+        <button class="timer-mode-btn px-3 py-1.5 rounded-lg text-xs font-mono font-medium glass-pill text-slate-300 hover:text-white transition-colors" data-time="45">45m Deep</button>
+        <button class="timer-mode-btn px-3 py-1.5 rounded-lg text-xs font-mono font-medium glass-pill text-slate-300 hover:text-white transition-colors" data-time="15">15m Quick</button>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center justify-center gap-4 pt-2">
+        <button id="timerResetBtn" class="p-3 rounded-xl glass-pill text-slate-400 hover:text-white transition-colors" data-tooltip="Reset Timer">
+          <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+        </button>
+        
+        <button id="timerStartPauseBtn" class="px-8 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          <span>Start</span>
+        </button>
+      </div>
+
+      <p class="text-[11px] text-slate-500 italic">"Completing the timer automatically checks off the task!"</p>
+
+    </div>
+  </div>
+
+  <!-- App Scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
