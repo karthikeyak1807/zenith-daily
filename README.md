@@ -19,7 +19,8 @@
 
 3. **🔥 Daily Streak & Automatic Rollover Engine**:
    - Flame streak tracking (`🔥 X days`) per habit and overall.
-   - Smart daily rollover: automatically archives yesterday's completion stats into your history log, preserves streaks, and resets checkboxes for a fresh new day.
+   - Smart daily rollover: automatically archives yesterday's completion stats into your history log, preserves streaks, and resets checkboxes for a fresh new day without deleting your daily habits.
+   - Permanent task retention: completed tasks stay right in your daily list (with strikethrough & completion badges) and **never vanish** unless you explicitly choose to delete them.
 
 4. **🎉 Audio Synthesizer & Celebrations**:
    - Zero-dependency procedural Web Audio API sounds: pleasant tactile clicks, harmonic chord chimes on completion, and victory fanfares.
@@ -35,8 +36,8 @@
    - **7-Day Consistency Trend**: Daily completion percentage bar chart.
    - **GitHub-Style 35-Day Heatmap**: Visual contribution grid tracking habit consistency over time.
 
-7. **💾 100% Local, Private & Portable**:
-   - Zero servers required; all data stays safely in your browser's `localStorage`.
+7. **💾 Multi-Layer Indestructible Persistence**:
+   - Quadruple-layer persistence: `localStorage` + redundant backup key + `IndexedDB` (survives browser session clears) + automatic local disk file sync (`zenith_tasks.json`) via `serve.py`.
    - Export full JSON backups anytime and restore them with 1 click.
    - "Reset Today" button to quickly start fresh or test.
 

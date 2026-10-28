@@ -1,10 +1,11 @@
 /**
  * Zenith Daily - LocalStorage & State Management Engine (Clean Production Mode)
- * Zero mock data by default: starts pure from Day 1.
+ * Multi-layer persistence: LocalStorage + Redundant Backup + IndexedDB + Disk Sync
  */
 
 const STORAGE_KEYS = {
   TASKS: 'zenith_tasks_prod_v2',
+  BACKUP: 'zenith_tasks_backup',
   HISTORY: 'zenith_history_prod_v2',
   CATEGORIES: 'zenith_categories_prod_v2',
   LAST_DATE: 'zenith_last_date_prod_v2',
@@ -101,7 +102,14 @@ function getTodayDateString() {
 
 class StorageManager {
   constructor() {
+    this.db = null;
     this.checkDailyRollover();
+    this.initIndexedDB();
+    this.syncWithBackend();
+  }
+
+  getTodayDateString() {
+    return getTodayDateString();
   }
 
   checkDailyRollover() {
@@ -125,7 +133,8 @@ class StorageManager {
         this.recordDayHistory(lastDate, completedCount, totalCount);
       }
 
-      // Reset completed status for all daily tasks
+      // Reset completed status for the fresh day
+      // Crucial: ALL TASKS REMAIN IN THE LIST! No task is ever deleted!
       tasks.forEach(t => {
         if (!t.completed) {
           t.streak = 0;
@@ -141,7 +150,13 @@ class StorageManager {
   initCleanData() {
     // Pure clean state: empty tasks, empty history, standard categories
     if (!localStorage.getItem(STORAGE_KEYS.TASKS)) {
-      this.saveTasks([]);
+      // Check backup first before setting empty
+      const backup = localStorage.getItem(STORAGE_KEYS.BACKUP);
+      if (backup && backup !== '[]') {
+        localStorage.setItem(STORAGE_KEYS.TASKS, backup);
+      } else {
+        this.saveTasks([]);
+      }
     }
     if (!localStorage.getItem(STORAGE_KEYS.CATEGORIES)) {
       localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(DEFAULT_CATEGORIES));
@@ -153,7 +168,15 @@ class StorageManager {
 
   getTasks() {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.TASKS);
+      let data = localStorage.getItem(STORAGE_KEYS.TASKS);
+      if (!data || data === '[]') {
+        // Redundant fallback: check backup key
+        const backup = localStorage.getItem(STORAGE_KEYS.BACKUP);
+        if (backup && backup !== '[]') {
+          data = backup;
+          localStorage.setItem(STORAGE_KEYS.TASKS, backup);
+        }
+      }
       return data ? JSON.parse(data) : [];
     } catch (e) {
       console.error('Failed to load tasks', e);
@@ -162,7 +185,18 @@ class StorageManager {
   }
 
   saveTasks(tasks) {
-    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+    try {
+      const json = JSON.stringify(tasks);
+      localStorage.setItem(STORAGE_KEYS.TASKS, json);
+      if (tasks && tasks.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.BACKUP, json);
+      }
+      // Persistent storage layers
+      this.saveToIndexedDB(tasks);
+      this.saveToBackend(tasks);
+    } catch (e) {
+      console.error('Failed to save tasks', e);
+    }
   }
 
   addTask(taskData) {
@@ -198,6 +232,7 @@ class StorageManager {
     return null;
   }
 
+  // Deleting is the ONLY way a task is removed from the task list
   deleteTask(id) {
     let tasks = this.getTasks();
     tasks = tasks.filter(t => t.id !== id);
@@ -205,6 +240,7 @@ class StorageManager {
     return tasks;
   }
 
+  // Toggling completion NEVER deletes a task! It only marks completed = true/false.
   toggleTaskCompletion(id) {
     const tasks = this.getTasks();
     const task = tasks.find(t => t.id === id);
@@ -296,6 +332,7 @@ class StorageManager {
 
   clearAllData() {
     this.saveTasks([]);
+    localStorage.setItem(STORAGE_KEYS.BACKUP, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify([]));
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(DEFAULT_CATEGORIES));
     return [];
@@ -325,6 +362,101 @@ class StorageManager {
     } catch (e) {
       console.error('Import parse error', e);
       return false;
+    }
+  }
+
+  /* ==========================================================================
+     Indestructible Storage Fallbacks (IndexedDB + Backend File Sync)
+     ========================================================================== */
+  initIndexedDB() {
+    if (!window.indexedDB) return;
+    try {
+      const request = indexedDB.open('ZenithDB', 1);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('store')) {
+          db.createObjectStore('store');
+        }
+      };
+      request.onsuccess = (e) => {
+        this.db = e.target.result;
+        // Check if localStorage was emptied by browser session close
+        const currentTasks = this.getTasks();
+        if (!currentTasks || currentTasks.length === 0) {
+          this.restoreFromIndexedDB();
+        }
+      };
+    } catch (e) {
+      console.warn('IndexedDB initialization failed', e);
+    }
+  }
+
+  saveToIndexedDB(tasks) {
+    if (!this.db) return;
+    try {
+      const tx = this.db.transaction('store', 'readwrite');
+      const store = tx.objectStore('store');
+      store.put(tasks, 'tasks');
+      store.put(this.getHistory(), 'history');
+    } catch (e) {
+      console.warn('IndexedDB save failed', e);
+    }
+  }
+
+  restoreFromIndexedDB() {
+    if (!this.db) return;
+    try {
+      const tx = this.db.transaction('store', 'readonly');
+      const store = tx.objectStore('store');
+      const req = store.get('tasks');
+      req.onsuccess = () => {
+        if (req.result && Array.isArray(req.result) && req.result.length > 0) {
+          console.log('Restoring tasks from IndexedDB');
+          this.saveTasks(req.result);
+          if (window.appReloadTrigger) {
+            window.appReloadTrigger();
+          }
+        }
+      };
+    } catch (e) {
+      console.warn('IndexedDB restore failed', e);
+    }
+  }
+
+  saveToBackend(tasks) {
+    if (window.location && window.location.protocol.startsWith('http')) {
+      try {
+        fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tasks: tasks,
+            history: this.getHistory(),
+            lastDate: localStorage.getItem(STORAGE_KEYS.LAST_DATE)
+          })
+        }).catch(() => {});
+      } catch (e) {}
+    }
+  }
+
+  syncWithBackend() {
+    if (window.location && window.location.protocol.startsWith('http')) {
+      fetch('/api/tasks')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.tasks && Array.isArray(data.tasks) && data.tasks.length > 0) {
+            const currentTasks = this.getTasks();
+            if (!currentTasks || currentTasks.length === 0) {
+              console.log('Restoring tasks from backend file');
+              this.saveTasks(data.tasks);
+              if (data.history) localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(data.history));
+              if (window.appReloadTrigger) {
+                window.appReloadTrigger();
+              }
+            }
+          }
+        })
+        .catch(() => {});
     }
   }
 }

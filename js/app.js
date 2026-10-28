@@ -81,6 +81,28 @@ document.addEventListener('DOMContentLoaded', () => {
   updateProgressGauge();
   updateAnalytics();
 
+  // App reload trigger for async IndexedDB / disk sync
+  window.appReloadTrigger = () => {
+    renderCategoryTabs();
+    renderTasks();
+    updateProgressGauge();
+    updateAnalytics();
+  };
+
+  // Midnight / Day Rollover Watcher (checks every 30 seconds if date rolled over)
+  let lastCheckedDate = window.storageManager.getTodayDateString();
+  setInterval(() => {
+    const today = window.storageManager.getTodayDateString();
+    if (today !== lastCheckedDate) {
+      lastCheckedDate = today;
+      window.storageManager.checkDailyRollover();
+      renderTasks();
+      renderCategoryTabs();
+      updateProgressGauge();
+      updateAnalytics();
+    }
+  }, 30000);
+
   // Attach Event Listeners
   attachEventListeners();
 
@@ -221,17 +243,29 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTasks() {
     if (!taskListEl) return;
 
-    let tasks = window.storageManager.getTasks();
+    const allTasks = window.storageManager.getTasks();
+
+    // Pristine canvas empty state is ONLY shown when the user has 0 total tasks in the system
+    if (allTasks.length === 0) {
+      taskListEl.innerHTML = '';
+      if (emptyStateEl) emptyStateEl.classList.remove('hidden');
+      return;
+    } else {
+      if (emptyStateEl) emptyStateEl.classList.add('hidden');
+    }
+
+    let tasks = [...allTasks];
 
     // Category Filter
     if (currentCategory !== 'all') {
       tasks = tasks.filter(t => t.category === currentCategory);
     }
 
-    // Status Filter
-    if (currentStatus === 'active') {
-      tasks = tasks.filter(t => !t.completed);
-    } else if (currentStatus === 'completed') {
+    // Status Filter:
+    // IMPORTANT: Tasks NEVER vanish upon completion!
+    // In "all" and "active" (To Do), all tasks stay visible with incomplete tasks prioritized at the top.
+    // In "completed" (Done), shows completed tasks.
+    if (currentStatus === 'completed') {
       tasks = tasks.filter(t => t.completed);
     }
 
@@ -247,10 +281,38 @@ document.addEventListener('DOMContentLoaded', () => {
     taskListEl.innerHTML = '';
 
     if (tasks.length === 0) {
-      if (emptyStateEl) emptyStateEl.classList.remove('hidden');
+      // Filter or search returned 0 items, but tasks exist: show helpful filter reset notice (never Day 1 wipe)
+      const emptyFilterNotice = document.createElement('div');
+      emptyFilterNotice.className = 'col-span-full glass-panel p-8 text-center text-slate-400 space-y-3';
+      emptyFilterNotice.innerHTML = `
+        <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mx-auto text-slate-400">
+          <i data-lucide="filter-x" class="w-6 h-6"></i>
+        </div>
+        <p class="text-sm font-medium text-slate-300">No tasks found matching this filter.</p>
+        <p class="text-xs text-slate-500">Your daily tasks are safe. Try switching categories or clearing search.</p>
+        <button id="resetViewAllBtn" class="mt-2 px-4 py-2 rounded-xl glass-pill text-xs text-indigo-400 hover:text-white border border-indigo-500/30 transition-all font-medium">
+          View All Tasks
+        </button>
+      `;
+      taskListEl.appendChild(emptyFilterNotice);
+      const resetBtn = emptyFilterNotice.querySelector('#resetViewAllBtn');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          currentCategory = 'all';
+          currentStatus = 'all';
+          searchQuery = '';
+          if (searchInputEl) searchInputEl.value = '';
+          const statusTabs = document.querySelectorAll('.status-filter-btn');
+          statusTabs.forEach(b => {
+            b.classList.remove('active', 'text-indigo-400', 'border-indigo-500/40');
+            if (b.getAttribute('data-status') === 'all') b.classList.add('active', 'text-indigo-400');
+          });
+          renderCategoryTabs();
+          renderTasks();
+        });
+      }
+      if (window.lucide) window.lucide.createIcons();
       return;
-    } else {
-      if (emptyStateEl) emptyStateEl.classList.add('hidden');
     }
 
     // Sort: incomplete first, then by priority
@@ -407,6 +469,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleTaskDelete(taskId, cardEl) {
+    if (!confirm("Are you sure you want to permanently delete this daily task?")) {
+      return;
+    }
     window.soundEngine.playClick();
     cardEl.style.transition = 'all 0.3s ease';
     cardEl.style.opacity = '0';
